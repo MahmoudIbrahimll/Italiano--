@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الرقابة المالية</title>
+    <!-- Tailwind CSS with Dark Mode -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            950: '#070d18'
+                        }
+                    },
+                    boxShadow: {
+                        'neon-blue': '0 0 25px -4px rgba(59, 130, 246, 0.35)',
+                        'neon-emerald': '0 0 25px -4px rgba(16, 185, 129, 0.35)',
+                        'neon-rose': '0 0 25px -4px rgba(244, 63, 94, 0.35)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Three.js for 3D Background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- SheetJS (xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;900&display=swap');
+        * { font-family: 'Cairo', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Canvas Ambient Background */
+        #webglCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Executive Glassmorphism */
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.85) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 
+                0 20px 45px -15px rgba(15, 23, 42, 0.07),
+                0 0 0 1px rgba(255, 255, 255, 0.8),
+                inset 0 2px 4px rgba(255, 255, 255, 0.95),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 1.5rem;
+            position: relative;
+        }
+
+        .dark .glass-panel {
+            background: linear-gradient(135deg, rgba(13, 20, 36, 0.88) 0%, rgba(6, 11, 22, 0.92) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.22);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.85),
+                0 0 35px -5px rgba(37, 99, 235, 0.2),
+                inset 0 1px 2px rgba(255, 255, 255, 0.16),
+                inset 0 -2px 6px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+        }
+
+        /* Sidebar Navigation Items */
+        .nav-link-vertical {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .nav-link-vertical.active {
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0.04) 100%);
+            border-right: 4px solid #3b82f6;
+            color: #2563eb;
+            font-weight: 800;
+        }
+        .dark .nav-link-vertical.active {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.28) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border-right: 4px solid #60a5fa;
+            color: #93c5fd;
+        }
+
+        /* 3D Action Buttons */
+        .btn-action-primary {
+            background: linear-gradient(180deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+            box-shadow: 0 4px 0 #1e40af, 0 12px 24px rgba(37, 99, 235, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-action-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #1e40af, 0 16px 28px rgba(37, 99, 235, 0.45);
+        }
+        .btn-action-primary:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #1e40af, 0 4px 8px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-action-emerald {
+            background: linear-gradient(180deg, #10b981 0%, #059669 50%, #047857 100%);
+            box-shadow: 0 4px 0 #064e3b, 0 12px 24px rgba(16, 185, 129, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-action-emerald:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #064e3b, 0 16px 28px rgba(16, 185, 129, 0.45);
+        }
+        .btn-action-emerald:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #064e3b, 0 4px 8px rgba(16, 185, 129, 0.25);
+        }
+
+        /* 3D Inset Surface */
+        .dropzone-sunken {
+            box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.07), inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+            transition: all 0.25s ease;
+        }
+        .dark .dropzone-sunken {
+            box-shadow: inset 0 5px 14px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+        }
+        .dropzone-sunken:hover {
+            transform: translateY(-2px);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 14px 28px rgba(37, 99, 235, 0.2);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 7px; height: 7px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 99px; }
+        .dark .custom-scroll::-webkit-scrollbar-thumb { background: #334155; }
+        .num-ltr { direction: ltr; display: inline-block; unicode-bidi: isolate; }
+
+        /* Executive Print Stylesheet */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 10mm 12mm;
+            }
+            body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                font-size: 11px !important;
+                overflow: visible !important;
+            }
+            aside, #webglCanvas, #boxAuditControls, .no-print, button, input[type="file"] {
+                display: none !important;
+            }
+            main {
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            .glass-panel {
+                background: #ffffff !important;
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                border-radius: 8px !important;
+                margin-bottom: 12px !important;
+                page-break-inside: avoid;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                page-break-inside: auto;
+            }
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            thead {
+                display: table-header-group;
+                background: #f1f5f9 !important;
+                color: #0f172a !important;
+            }
+            th, td {
+                border: 1px solid #cbd5e1 !important;
+                padding: 6px 8px !important;
+                color: #0f172a !important;
+            }
+            .print-header {
+                display: block !important;
+                border-bottom: 2px solid #1e3a8a;
+                padding-bottom: 8px;
+                margin-bottom: 14px;
+            }
+            .print-footer {
+                display: flex !important;
+                justify-content: space-between;
+                margin-top: 25px;
+                padding-top: 15px;
+                border-top: 1px solid #cbd5e1;
+                page-break-inside: avoid;
+            }
+            .custom-scroll {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 dark:text-slate-100 flex flex-col md:flex-row transition-colors duration-300 selection:bg-blue-600 selection:text-white">
+
+    <!-- Three.js Kinetic Space Canvas -->
+    <div id="webglCanvas"></div>
+
+    <!-- ========================================================================= -->
+    <!-- VERTICAL SIDEBAR NAVIGATION -->
+    <!-- ========================================================================= -->
+    <aside class="w-full md:w-72 md:fixed md:inset-y-0 md:right-0 z-50 flex flex-col justify-between bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-l border-slate-200/80 dark:border-slate-800/80 shadow-2xl p-5 no-print">
+        <div class="space-y-6">
+            
+            <!-- Brand & App Identity -->
+            <div class="flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800/80 pb-5">
+                <div class="relative p-3 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg shadow-blue-500/30">
+                    <i data-lucide="scale" class="w-6 h-6"></i>
+                    <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                    </span>
+                </div>
+                <div>
+                    <h1 class="text-base font-black tracking-tight text-slate-900 dark:text-white leading-snug">الرقابة المالية</h1>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">مطابقة الحسابات ومتابعة بوالص الشحن</p>
+                </div>
+            </div>
+
+            <!-- Verified Auditor Stamp -->
+            <div class="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/80 space-y-1.5 shadow-sm">
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">المسؤول والمراجع المعتمد</span>
+                <div class="flex items-center gap-2.5 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 focus-within:border-blue-500 transition">
+                    <div class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400" title="موثق ومعتمد">
+                        <i data-lucide="badge-check" class="w-4 h-4 fill-blue-500/20 text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <input type="text" id="auditorNameInput" value="أ/محمود خليفه" 
+                           oninput="saveAuditorName(this.value)" 
+                           class="bg-transparent text-xs font-black text-slate-900 dark:text-blue-300 w-full focus:outline-none" 
+                           title="المسؤول المعتمد (انقر للكتابة مباشرة)" />
+                </div>
+            </div>
+
+            <!-- Vertical Navigation Menu -->
+            <nav class="space-y-2 pt-1">
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block px-3">الوحدات التشغيلية</span>
+                
+                <button id="navTab_Recon" onclick="switchMainTab('recon')" 
+                        class="nav-link-vertical active w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs text-right">
+                    <div class="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        <i data-lucide="scale" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-black leading-tight">مطابقة الحسابات والبوالص</div>
+                        <div class="text-[10px] text-slate-400 font-semibold mt-0.5">التسوية الآلية وكشف الفروق</div>
+                    </div>
+                </button>
+
+                <button id="navTab_Dash" onclick="switchMainTab('dash')" 
+                        class="nav-link-vertical w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-right">
+                    <div class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        <i data-lucide="truck" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-black leading-tight">متابعة بوالص الشحن</div>
+                        <div class="text-[10px] text-slate-400 font-semibold mt-0.5">الشركات والمناديب والمتأخرات</div>
+                    </div>
+                </button>
+            </nav>
+
+        </div>
+
+        <!-- Sidebar Footer Controls -->
+        <div class="border-t border-slate-200/80 dark:border-slate-800/80 pt-4 space-y-3">
+            <div class="flex items-center justify-between px-2">
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400">تخصيص الواجهة:</span>
+                <div class="flex items-center gap-2">
+                    <button id="btnSoundToggle" onclick="toggleAudio()" class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-500 shadow-sm" title="المؤثرات الصوتية">
+                        <i data-lucide="volume-2" id="iconSound" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="toggleTheme()" class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-amber-400 shadow-sm" title="الوضع الليلي / النهاري">
+                        <i data-lucide="sun" class="w-4 h-4 hidden dark:block text-amber-400"></i>
+                        <i data-lucide="moon" class="w-4 h-4 block dark:hidden text-slate-700"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- MAIN WORKSPACE -->
+    <!-- ========================================================================= -->
+    <main class="flex-1 md:mr-72 p-4 md:p-8 space-y-6 max-w-7xl mx-auto w-full">
+
+        <!-- Printable Document Header -->
+        <div class="hidden print-header">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-black text-slate-900">تقرير الرقابة والمطابقة المالية</h1>
+                    <p class="text-xs text-slate-600 mt-1">كشف تدقيق وتسوية الحسابات الدفترية مقابل بوالص الشحن</p>
+                </div>
+                <div class="text-left text-xs font-mono text-slate-600">
+                    <div>المسؤول المعتمد: <strong class="text-slate-900" id="printAuditorName">أ/محمود خليفه</strong></div>
+                    <div>تاريخ الإصدار: <span id="printDate"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 1: RECONCILIATION ENGINE -->
+        <!-- ========================================================================= -->
+        <div id="viewReconciliation" class="space-y-6">
+
+            <!-- Dual Upload Modules (Default Col L for Name, Col F for Amount) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
+
+                <!-- Module 1: Parcels Ledger -->
+                <div class="glass-panel p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-2xl border border-blue-500/20">
+                                <i data-lucide="package-search" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-sm font-black text-slate-900 dark:text-white">1. ملف سجل بوالص الشحن (Excel)</h2>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-bold">التحديد التلقائي: <span class="text-blue-600 dark:text-blue-400 font-black">الاسم = عمود L</span> | <span class="text-blue-600 dark:text-blue-400 font-black">قيمة البوليصة = عمود F</span></p>
+                            </div>
+                        </div>
+                        <span id="badgeParcelsFile" class="text-[10px] font-black px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700">بانتظار الملف</span>
+                    </div>
+
+                    <input type="file" id="inputParcelsFile" class="hidden" accept=".xlsx, .xls, .csv" onchange="handleParcelsUpload(event)">
+                    <div onclick="document.getElementById('inputParcelsFile').click()" 
+                         class="dropzone-sunken border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 bg-slate-50/50 dark:bg-slate-950/40 rounded-2xl p-7 text-center cursor-pointer flex flex-col items-center justify-center gap-2 group">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition duration-200 shadow-sm">
+                            <i data-lucide="cloud-upload" class="w-6 h-6"></i>
+                        </div>
+                        <div class="text-xs font-black text-slate-800 dark:text-slate-200" id="txtParcelsStatus">اضغط لاختيار أو إسقاط ملف بوالص الشحن هنا</div>
+                        <div class="text-[11px] text-slate-400">يختار تلقائياً العمود L للاسم والعمود F لقيمة البوليصة</div>
+                    </div>
+
+                    <!-- Column Mapping Selectors -->
+                    <div id="boxParcelsMapping" class="hidden dropzone-sunken bg-slate-100/70 dark:bg-slate-950/70 rounded-2xl p-4 text-xs space-y-3">
+                        <div class="flex items-center justify-between text-[11px] font-bold">
+                            <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-blue-500"></i> أعمدة ملف البوالص المعتمدة:</span>
+                            <span id="txtParcelsStats" class="text-blue-600 dark:text-blue-400 font-mono font-bold"></span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 dark:text-slate-400 mb-1">عمود اسم العميل (تلقائياً L):</label>
+                                <select id="selParcelClientCol" onchange="recalcParcels()" class="w-full bg-white dark:bg-slate-900 border border-blue-400 dark:border-blue-600 text-slate-900 dark:text-white rounded-xl p-2 font-black text-xs shadow-sm focus:ring-2 focus:ring-blue-500"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-black text-slate-600 dark:text-slate-400 mb-1">عمود قيمة البوليصة (تلقائياً F):</label>
+                                <select id="selParcelAmountCol" onchange="recalcParcels()" class="w-full bg-white dark:bg-slate-900 border border-blue-400 dark:border-blue-600 text-slate-900 dark:text-white rounded-xl p-2 font-black text-xs shadow-sm focus:ring-2 focus:ring-blue-500"></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module 2: Accounts Ledger -->
+                <div class="glass-panel p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-500/20">
+                                <i data-lucide="book-marked" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-sm font-black text-slate-900 dark:text-white">2. كشف أرصدة الحسابات (Excel)</h2>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-bold">فحص دقيق: <span class="text-emerald-600 dark:text-emerald-400 font-bold">اسم الحساب</span> + <span class="text-emerald-600 dark:text-emerald-400 font-bold">صافي الرصيد الدفتري</span></p>
+                            </div>
+                        </div>
+                        <span id="badgeAccountsFile" class="text-[10px] font-black px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700">بانتظار الملف</span>
+                    </div>
+
+                    <input type="file" id="inputAccountsFile" class="hidden" accept=".xlsx, .xls, .csv" onchange="handleAccountsUpload(event)">
+                    <div onclick="document.getElementById('inputAccountsFile').click()" 
+                         class="dropzone-sunken border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 bg-slate-50/50 dark:bg-slate-950/40 rounded-2xl p-7 text-center cursor-pointer flex flex-col items-center justify-center gap-2 group">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition duration-200 shadow-sm">
+                            <i data-lucide="cloud-upload" class="w-6 h-6"></i>
+                        </div>
+                        <div class="text-xs font-black text-slate-800 dark:text-slate-200" id="txtAccountsStatus">اضغط لاختيار أو إسقاط كشف الأرصدة هنا</div>
+                        <div class="text-[11px] text-slate-400">يتعرف على الأرصدة المدينة والدائنة بدقة متناهية</div>
+                    </div>
+
+                    <!-- Column Mapping Selectors -->
+                    <div id="boxAccountsMapping" class="hidden dropzone-sunken bg-slate-100/70 dark:bg-slate-950/70 rounded-2xl p-4 text-xs space-y-3">
+                        <div class="flex items-center justify-between text-[11px] font-bold">
+                            <span class="text-slate-700 dark:text-slate-300 flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i> أعمدة كشف الحسابات المعتمدة:</span>
+                            <span id="txtAccountsStats" class="text-emerald-600 dark:text-emerald-400 font-mono font-bold"></span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2.5 text-xs">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">اسم الحساب:</label>
+                                <select id="selAccNameCol" onchange="recalcAccounts()" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl p-2 font-bold text-xs"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-400 mb-1">رقم الحساب:</label>
+                                <select id="selAccNoCol" onchange="recalcAccounts()" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl p-2 font-bold text-xs"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-emerald-600 dark:text-emerald-400 mb-1">صافي الرصيد:</label>
+                                <select id="selAccBalanceCol" onchange="recalcAccounts()" class="w-full bg-white dark:bg-slate-900 border border-emerald-500 text-emerald-700 dark:text-emerald-300 rounded-xl p-2 font-black text-xs"></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Command Action Ribbon -->
+            <div class="glass-panel p-4 flex flex-wrap items-center justify-between gap-4 no-print">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-md">
+                        <i data-lucide="calculator" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">معادلة المطابقة المحاسبية:</span>
+                        <div class="font-mono text-xs text-slate-900 dark:text-white font-black mt-0.5">
+                            <span class="text-blue-600 dark:text-blue-400">انحراف التسوية</span> = <span class="text-emerald-600 dark:text-emerald-400">صافي الرصيد الدفتري</span> - <span class="text-indigo-600 dark:text-indigo-400">إجمالي قيمة بوالص الشحن</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button id="btnExecuteReconEngine" onclick="executeFullReconciliation()" disabled 
+                            class="btn-action-primary flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none">
+                        <i data-lucide="play-circle" class="w-4 h-4"></i>
+                        تشغيل التسوية والمطابقة الذكية
+                    </button>
+                    <button id="btnExportReconExcel" onclick="downloadReconciliationWorkbook()" style="display: none;" 
+                            class="btn-action-emerald flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black text-white">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        تصدير التقرير إلى Excel
+                    </button>
+                    <button id="btnPrintReport" onclick="printOfficialStatement()" style="display: none;" 
+                            class="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition shadow" title="طباعة الكشف المعتمد">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Audit Results View -->
+            <div id="boxAuditResults" style="display: none;" class="space-y-6">
+
+                <!-- 6 Live KPI Metric Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" id="gridAuditKpis"></div>
+
+                <!-- Chart Visualizations -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
+                    <div class="glass-panel p-5 flex flex-col justify-between">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 mb-2">
+                            <span class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <i data-lucide="pie-chart" class="w-4 h-4 text-blue-500"></i> توزيع حالات التسوية
+                            </span>
+                            <span class="text-[10px] font-bold text-slate-400">نسب العملاء</span>
+                        </div>
+                        <div class="h-48 relative flex items-center justify-center">
+                            <canvas id="chartAuditDoughnut"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 lg:col-span-2 flex flex-col justify-between">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 mb-2">
+                            <span class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-500"></i> المقارنة المالية الإجمالية (ج.م)
+                            </span>
+                            <span class="text-[10px] font-bold text-slate-400">الرصيد الدفتري مقابل البوالص</span>
+                        </div>
+                        <div class="h-48">
+                            <canvas id="chartAuditBars"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Filter Navigation -->
+                <div id="boxAuditControls" class="glass-panel p-2 flex flex-wrap items-center gap-2 no-print">
+                    <button onclick="changeAuditFilter('all')" id="tabFilter_all" class="recon-tab-btn px-4 py-2 rounded-2xl text-xs font-black transition bg-blue-600 text-white shadow-md shadow-blue-600/30">
+                        كافة السجلات (<span id="txtCount_all">0</span>)
+                    </button>
+                    <button onclick="changeAuditFilter('zero')" id="tabFilter_zero" class="recon-tab-btn px-4 py-2 rounded-2xl text-xs font-bold transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        ✅ مطابق وخالص [0.00] (<span id="txtCount_zero">0</span>)
+                    </button>
+                    <button onclick="changeAuditFilter('receivable')" id="tabFilter_receivable" class="recon-tab-btn px-4 py-2 rounded-2xl text-xs font-bold transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        ⚠️ رصيد مدين - مستحق (<span id="txtCount_receivable">0</span>)
+                    </button>
+                    <button onclick="changeAuditFilter('payable')" id="tabFilter_payable" class="recon-tab-btn px-4 py-2 rounded-2xl text-xs font-bold transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        💳 رصيد دائن - بالسالب (<span id="txtCount_payable" class="font-black text-rose-500">0</span>)
+                    </button>
+                    <button onclick="changeAuditFilter('unlinked')" id="tabFilter_unlinked" class="recon-tab-btn px-4 py-2 rounded-2xl text-xs font-bold transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        ❓ غير مقترن / طرف واحد (<span id="txtCount_unlinked">0</span>)
+                    </button>
+
+                    <div class="mr-auto w-full md:w-64">
+                        <input type="text" id="inputAuditSearch" onkeyup="renderAuditTable()" placeholder="ابحث باسم الحساب أو الكود..." 
+                               class="w-full text-xs px-3.5 py-2 rounded-xl bg-white/70 dark:bg-slate-950/70 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner">
+                    </div>
+                </div>
+
+                <!-- Main Reconciliation Ledger Table -->
+                <div class="glass-panel overflow-hidden">
+                    <div class="bg-slate-100/70 dark:bg-slate-950/70 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs font-bold">
+                        <span class="flex items-center gap-2 text-slate-800 dark:text-slate-200"><i data-lucide="layers" class="w-4 h-4 text-blue-500"></i> جدول مطابقة الحسابات والبوالص مع كشف الوضع الأخير المحدث</span>
+                        <span id="txtRecordsCounter" class="text-slate-500 font-mono font-black"></span>
+                    </div>
+                    <div class="overflow-x-auto custom-scroll max-h-[620px]">
+                        <table class="w-full text-xs text-right">
+                            <thead class="bg-slate-100/90 dark:bg-slate-950/90 backdrop-blur-md text-slate-600 dark:text-slate-400 font-bold sticky top-0 border-b border-slate-200 dark:border-slate-800 text-[11px] z-10 shadow-sm">
+                                <tr>
+                                    <th class="p-3 text-center">م</th>
+                                    <th class="p-3">اسم الحساب / العميل</th>
+                                    <th class="p-3 text-center font-mono">رقم الحساب</th>
+                                    <th class="p-3 text-center">عدد البوالص</th>
+                                    <th class="p-3 text-left font-mono">إجمالي البوالص (ج.م)</th>
+                                    <th class="p-3 text-left font-mono">صافي الرصيد الدفتري (ج.م)</th>
+                                    <th class="p-3 text-left font-mono">فارق المطابقة (الرصيد - البوالص)</th>
+                                    <th class="p-3 text-center bg-slate-200/50 dark:bg-slate-800/60 text-slate-900 dark:text-white font-black">الوضع الأخير (حالة الرصيد)</th>
+                                    <th class="p-3">الموقف المحاسبي والتوجيه الرقابي</th>
+                                    <th class="p-3 text-center no-print">سند</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold" id="auditTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 2: SHIPMENT DASHBOARD -->
+        <!-- ========================================================================= -->
+        <div id="viewDashboard" style="display: none;" class="space-y-6">
+
+            <!-- Upload Box for Shipment Tracking -->
+            <div id="boxDashUpload" class="glass-panel p-10 text-center space-y-4 cursor-pointer hover:border-blue-500 no-print"
+                 onclick="document.getElementById('inputDashFile').click()">
+                <input type="file" id="inputDashFile" class="hidden" accept=".xlsx, .xls, .csv" onchange="handleDashFileUpload(event)">
+                <div class="w-16 h-16 mx-auto bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-3xl flex items-center justify-center shadow-xl shadow-blue-500/30 transform hover:scale-110 transition duration-200">
+                    <i data-lucide="truck" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-900 dark:text-slate-100">ارفع أي ملف بوالص شحن لتحليله في لوحة التحكم التفاعلية</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">تحليل ذكي فوري لشركات الشحن، المناديب، نسب التسليم، ومتابعة متأخرات التحصيل</p>
+                </div>
+            </div>
+
+            <div id="boxDashContent" style="display: none;" class="space-y-6">
+                <!-- Info Ribbon -->
+                <div class="glass-panel p-4 flex flex-wrap items-center justify-between gap-4 no-print">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-slate-500">الملف المفحوص:</span>
+                        <span id="badgeDashFilename" class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 font-bold px-3 py-1 rounded-xl text-xs font-mono shadow-sm"></span>
+                        <select id="selDashSheet" onchange="switchDashSheet()" class="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl px-2.5 py-1 shadow-sm"></select>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="document.getElementById('inputDashFile').click()" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-3.5 py-2 rounded-2xl text-xs font-bold transition shadow-sm">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-blue-500"></i>
+                            تبديل الملف
+                        </button>
+                        <button onclick="exportDashExcel()" class="btn-action-emerald flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-xs font-bold">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                            تصدير التقرير الشامل
+                        </button>
+                        <button onclick="printOfficialStatement()" class="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition shadow" title="طباعة لوحة الشحن">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Enhanced 7 Executive KPI Cards with Animated Progress Bars -->
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3.5" id="gridDashKpis"></div>
+
+                <!-- Financial Reconciliation Matrix -->
+                <div class="glass-panel overflow-hidden">
+                    <div class="bg-slate-100/70 dark:bg-slate-950/70 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs font-bold">
+                        <span class="flex items-center gap-2 text-slate-900 dark:text-slate-200"><i data-lucide="scale" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i> المطابقة المالية: مقارنة الفواتير بالبوالص وفروق الاستبدال</span>
+                    </div>
+                    <div class="overflow-x-auto custom-scroll">
+                        <table class="w-full text-xs text-right">
+                            <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800">
+                                <tr>
+                                    <th class="p-2.5">البيان</th>
+                                    <th class="p-2.5 text-center">عدد البوالص</th>
+                                    <th class="p-2.5 text-center">نسبة العدد</th>
+                                    <th class="p-2.5 text-left font-mono">إجمالي الفواتير (ج.م)</th>
+                                    <th class="p-2.5 text-center">نسبة الفواتير</th>
+                                    <th class="p-2.5 text-left font-mono">إجمالي البوالص (ج.م)</th>
+                                    <th class="p-2.5 text-center">نسبة البوالص</th>
+                                    <th class="p-2.5 text-left font-mono">الفرق المالي</th>
+                                    <th class="p-2.5 text-center">نسبة الفرق</th>
+                                    <th class="p-2.5">التفسير والموقف المالي</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-semibold" id="bodyDashRecon"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Couriers & Reps Charts & Tables with Delivery % Progress Bars -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-panel p-5 space-y-3">
+                        <h3 class="font-bold text-xs text-slate-900 dark:text-slate-200 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5"><i data-lucide="truck" class="w-4 h-4 text-blue-500"></i> كفاءة ومطابقة شركات الشحن</h3>
+                        <div class="overflow-x-auto custom-scroll max-h-52">
+                            <table class="w-full text-xs text-right">
+                                <thead class="bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold border-b sticky top-0">
+                                    <tr>
+                                        <th class="p-2">شركة الشحن</th>
+                                        <th class="p-2 text-center">العدد</th>
+                                        <th class="p-2 text-center">مسلّم</th>
+                                        <th class="p-2 text-center">قيد التوصيل</th>
+                                        <th class="p-2 text-center">نسبة التسليم</th>
+                                        <th class="p-2 text-left font-mono">إجمالي الفواتير</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60" id="bodyDashCouriers"></tbody>
+                            </table>
+                        </div>
+                        <div class="h-44 mt-2 no-print"><canvas id="chartDashCouriers"></canvas></div>
+                    </div>
+
+                    <div class="glass-panel p-5 space-y-3">
+                        <h3 class="font-bold text-xs text-slate-900 dark:text-slate-200 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5"><i data-lucide="users" class="w-4 h-4 text-emerald-500"></i> أداء مسؤولي المتابعة والمناديب</h3>
+                        <div class="overflow-x-auto custom-scroll max-h-52">
+                            <table class="w-full text-xs text-right">
+                                <thead class="bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold border-b sticky top-0">
+                                    <tr>
+                                        <th class="p-2">المندوب</th>
+                                        <th class="p-2 text-center">العدد</th>
+                                        <th class="p-2 text-center">مسلّم</th>
+                                        <th class="p-2 text-center">قيد التوصيل</th>
+                                        <th class="p-2 text-center">نسبة التسليم</th>
+                                        <th class="p-2 text-left font-mono">إجمالي الفواتير</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60" id="bodyDashReps"></tbody>
+                            </table>
+                        </div>
+                        <div class="h-44 mt-2 no-print"><canvas id="chartDashStatus"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Alert Section -->
+                <div class="glass-panel border border-rose-300 dark:border-rose-500/40 overflow-hidden shadow-neon-rose">
+                    <div class="bg-rose-500/10 px-6 py-3.5 border-b border-rose-200 dark:border-rose-500/30 flex justify-between items-center text-xs font-bold">
+                        <span class="flex items-center gap-2 text-rose-700 dark:text-rose-300"><i data-lucide="alert-triangle" class="w-4 h-4"></i> سجل الإنذار والمتابعة: شحنات الفترات السابقة والمتأخرات</span>
+                        <span id="badgeDashAlertCount" class="bg-rose-600 text-white px-3 py-0.5 rounded-full text-[10px] font-mono shadow-sm"></span>
+                    </div>
+                    <div class="overflow-x-auto custom-scroll max-h-64">
+                        <table class="w-full text-xs text-right">
+                            <thead class="bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold border-b">
+                                <tr>
+                                    <th class="p-2 text-center">م</th>
+                                    <th class="p-2">الموقف</th>
+                                    <th class="p-2 text-center">تاريخ الشحن</th>
+                                    <th class="p-2 text-center">المدة (أيام)</th>
+                                    <th class="p-2 text-center">شركة الشحن</th>
+                                    <th class="p-2 text-center font-mono">رقم البوليصة</th>
+                                    <th class="p-2">العميل</th>
+                                    <th class="p-2 text-center font-mono">الهاتف</th>
+                                    <th class="p-2 text-left font-mono">الفاتورة</th>
+                                    <th class="p-2">المندوب</th>
+                                    <th class="p-2">الإجراء المطلوب</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60" id="bodyDashAlerts"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Master Searchable Table with Status Chips -->
+                <div class="glass-panel overflow-hidden">
+                    <div class="bg-slate-100/70 dark:bg-slate-950/70 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-3 no-print">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-bold text-xs flex items-center gap-2 text-slate-800 dark:text-slate-200"><i data-lucide="list" class="w-4 h-4 text-blue-500"></i> سجل البوالص المفحوص:</span>
+                            <button onclick="filterMasterByStatus('all')" id="chip_all" class="chip-filter px-3 py-1 rounded-xl text-[11px] font-black bg-blue-600 text-white shadow-sm">الكل (<span id="txtMasterTotal">0</span>)</button>
+                            <button onclick="filterMasterByStatus('delivered')" id="chip_delivered" class="chip-filter px-3 py-1 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800">مسلّمة</button>
+                            <button onclick="filterMasterByStatus('transit')" id="chip_transit" class="chip-filter px-3 py-1 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800">قيد التوصيل</button>
+                            <button onclick="filterMasterByStatus('delayed')" id="chip_delayed" class="chip-filter px-3 py-1 rounded-xl text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30">المتأخرات</button>
+                        </div>
+                        <input type="text" id="inputDashSearch" onkeyup="filterDashMasterTable()" placeholder="ابحث برقم البوليصة أو اسم العميل أو الهاتف..." 
+                               class="text-xs px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-slate-950/80 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner">
+                    </div>
+                    <div class="overflow-x-auto custom-scroll max-h-96">
+                        <table class="w-full text-xs text-right">
+                            <thead class="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-bold sticky top-0 border-b" id="theadDashMaster"></thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60" id="tbodyDashMaster"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Printable Document Footer -->
+        <div class="hidden print-footer">
+            <div class="space-y-1">
+                <div class="text-xs font-bold text-slate-700">إعداد وتدقيق: <span id="printFooterAuditor">أ/محمود خليفه</span></div>
+                <div class="text-[10px] text-slate-400">التوقيع: _______________________</div>
+            </div>
+            <div class="space-y-1 text-left">
+                <div class="text-xs font-bold text-slate-700">اعتماد الإدارة المالية</div>
+                <div class="text-[10px] text-slate-400">الختم والتوقيع: _______________________</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Settlement Voucher Modal -->
+    <div id="modalVoucher" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4 hidden no-print">
+        <div class="glass-panel max-w-lg w-full p-6 space-y-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 rounded-xl bg-blue-500/10 text-blue-500"><i data-lucide="file-check" class="w-5 h-5"></i></div>
+                    <h3 class="font-black text-sm text-slate-900 dark:text-white">سند التدقيق والمطابقة المحاسبية</h3>
+                </div>
+                <button onclick="closeModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="modalVoucherContent" class="space-y-3 text-xs"></div>
+            <div class="pt-2 flex justify-end gap-2.5 border-t border-slate-200 dark:border-slate-800">
+                <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5"><i data-lucide="printer" class="w-3.5 h-3.5"></i> طباعة السند</button>
+                <button onclick="closeModal()" class="btn-action-primary px-5 py-2 rounded-xl text-white font-bold text-xs">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio Synthesizer
+        let soundEnabled = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playChime(freq = 520, type = 'sine', duration = 0.12) {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('iconSound');
+            icon.setAttribute('data-lucide', soundEnabled ? 'volume-2' : 'volume-x');
+            lucide.createIcons();
+            if (soundEnabled) playChime(660);
+        }
+
+        // Print Statement Engine
+        function printOfficialStatement() {
+            const auditor = document.getElementById('auditorNameInput')?.value || "أ/محمود خليفه";
+            const dateStr = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            const pAuditor = document.getElementById('printAuditorName');
+            const pFooterAuditor = document.getElementById('printFooterAuditor');
+            const pDate = document.getElementById('printDate');
+
+            if (pAuditor) pAuditor.innerText = auditor;
+            if (pFooterAuditor) pFooterAuditor.innerText = auditor;
+            if (pDate) pDate.innerText = dateStr;
+
+            window.print();
+        }
+
+        // Three.js Ambient Particle Grid
+        let scene, camera, renderer, particlesMesh, gridHelper;
+        let mouseX = 0, mouseY = 0;
+        const container = document.getElementById('webglCanvas');
+
+        function initThreeScene() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.set(0, 40, 90);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            const particleCount = 180;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 160;
+                positions[i + 1] = (Math.random() - 0.5) * 60;
+                positions[i + 2] = (Math.random() - 0.5) * 160;
+            }
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const pMaterial = new THREE.PointsMaterial({
+                color: isDark ? 0x3b82f6 : 0x2563eb,
+                size: 2.2,
+                transparent: true,
+                opacity: isDark ? 0.6 : 0.35
+            });
+            particlesMesh = new THREE.Points(geometry, pMaterial);
+            scene.add(particlesMesh);
+
+            gridHelper = new THREE.GridHelper(160, 20, isDark ? 0x1e40af : 0xbfdbfe, isDark ? 0x0f172a : 0xeff6ff);
+            gridHelper.position.y = -15;
+            scene.add(gridHelper);
+
+            window.addEventListener('resize', onThreeResize);
+            document.addEventListener('mousemove', onThreeMouseMove);
+            animateThree();
+        }
+
+        function onThreeMouseMove(event) {
+            mouseX = (event.clientX - window.innerWidth / 2) * 0.03;
+            mouseY = (event.clientY - window.innerHeight / 2) * 0.03;
+        }
+
+        function onThreeResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animateThree() {
+            requestAnimationFrame(animateThree);
+            if (particlesMesh) {
+                particlesMesh.rotation.y += 0.0008;
+                particlesMesh.rotation.x += 0.0004;
+            }
+            if (gridHelper) {
+                gridHelper.rotation.y += 0.0006;
+            }
+            camera.position.x += (mouseX - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY + 40 - camera.position.y) * 0.05;
+            camera.lookAt(0, 0, 0);
+            renderer.render(scene, camera);
+        }
+
+        // Auditor Name Storage
+        function saveAuditorName(val) {
+            localStorage.setItem('sys_auditor_name', val);
+        }
+        function loadAuditorName() {
+            const saved = localStorage.getItem('sys_auditor_name');
+            if (saved) {
+                const el = document.getElementById('auditorNameInput');
+                if (el) el.value = saved;
+            }
+        }
+
+        // Theme Switcher
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            if (particlesMesh && gridHelper) {
+                const isDark = html.classList.contains('dark');
+                particlesMesh.material.color.setHex(isDark ? 0x3b82f6 : 0x2563eb);
+                gridHelper.material.color.setHex(isDark ? 0x1e40af : 0xbfdbfe);
+            }
+            lucide.createIcons();
+            playChime(440);
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+        }
+
+        // Switch Tabs Vertically
+        function switchMainTab(tab) {
+            playChime(580);
+            const btnRecon = document.getElementById('navTab_Recon');
+            const btnDash = document.getElementById('navTab_Dash');
+            const viewRecon = document.getElementById('viewReconciliation');
+            const viewDash = document.getElementById('viewDashboard');
+
+            if (tab === 'recon') {
+                viewRecon.style.display = 'block';
+                viewDash.style.display = 'none';
+                btnRecon.classList.add('active');
+                btnDash.classList.remove('active');
+            } else {
+                viewRecon.style.display = 'none';
+                viewDash.style.display = 'block';
+                btnDash.classList.add('active');
+                btnRecon.classList.remove('active');
+            }
+            lucide.createIcons();
+        }
+
+        function getColLetter(i) {
+            let s = "";
+            while (i >= 0) {
+                s = String.fromCharCode((i % 26) + 65) + s;
+                i = Math.floor(i / 26) - 1;
+            }
+            return s;
+        }
+
+        function parseNum(val) {
+            if (val === undefined || val === null || val === '') return 0;
+            if (typeof val === 'number') return val;
+            let s = val.toString().trim();
+            if (!s) return 0;
+
+            let isNeg = false;
+            if (s.includes('(') && s.includes(')')) isNeg = true;
+            if (/[-−–—]/.test(s)) isNeg = true;
+
+            let clean = s.replace(/[^0-9.]/g, '');
+            let n = parseFloat(clean);
+            if (isNaN(n)) return 0;
+            return isNeg ? -Math.abs(n) : Math.abs(n);
+        }
+
+        function formatMoneyHTML(num) {
+            let n = Number(num) || 0;
+            let formatted = Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (n < -0.001) {
+                return `<span class="num-ltr font-black text-rose-600 dark:text-rose-400">-${formatted}</span> <span class="text-[10px] text-slate-400">ج.م</span>`;
+            } else if (n > 0.001) {
+                return `<span class="num-ltr font-black text-slate-900 dark:text-slate-100">${formatted}</span> <span class="text-[10px] text-slate-400">ج.م</span>`;
+            } else {
+                return `<span class="num-ltr font-black text-emerald-600 dark:text-emerald-400">0.00</span> <span class="text-[10px] text-slate-400">ج.م</span>`;
+            }
+        }
+
+        // تم إصلاح الدالة: الحفاظ على نهاية الاسم كاملة وعدم حذف أي نص بعد الشرطة لمنع الدمج الخاطئ بين الفروع
+        function cleanName(raw) {
+            if (!raw) return "";
+            let s = raw.toString().trim();
+            s = s.replace(/[أإآ]/g, 'ا')
+                 .replace(/ة/g, 'ه')
+                 .replace(/ى/g, 'ي')
+                 .replace(/[٠-٩]/g, d => "0123456789"["٠١٢٣٤٥٦٧٨٩".indexOf(d)])
+                 .replace(/[\s\-_]+/g, ' ')
+                 .toLowerCase()
+                 .trim();
+            return s;
+        }
+
+        function scanGrid(matrix) {
+            let scanLimit = Math.min(6, matrix.length);
+            let colCount = 0;
+            for (let r = 0; r < scanLimit; r++) {
+                if (matrix[r] && matrix[r].length > colCount) colCount = matrix[r].length;
+            }
+
+            let headers = [];
+            for (let c = 0; c < colCount; c++) {
+                let parts = [];
+                for (let r = 0; r < scanLimit; r++) {
+                    let v = (matrix[r] && matrix[r][c] !== undefined) ? matrix[r][c].toString().trim() : "";
+                    if (v && !parts.includes(v) && isNaN(Number(v))) {
+                        parts.push(v);
+                    }
+                }
+                headers[c] = parts.join(" | ");
+            }
+
+            let dataStart = 1;
+            for (let r = 0; r < scanLimit; r++) {
+                let row = matrix[r] || [];
+                if (row.some(v => v === 1 || v === '1' || v === 1.0)) {
+                    dataStart = r;
+                    break;
+                }
+            }
+            return { headers, dataStart };
+        }
+
+        // =========================================================================
+        // RECONCILIATION ENGINE
+        // =========================================================================
+        let pMatrix = [], aMatrix = [];
+        let pCols = { client: -1, parcel: -1 };
+        let aCols = { name: -1, accNo: -1, balance: -1 };
+
+        let groupedParcels = {}; 
+        let ledgerAccounts = {}; 
+        let auditList = [];
+        let curFilter = 'all';
+        let chartAuditDoughnutInst = null;
+        let chartAuditBarsInst = null;
+
+        function handleParcelsUpload(e) {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const data = new Uint8Array(evt.target.result);
+                const wb = XLSX.read(data, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                
+                let matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+                matrix = matrix.filter(r => r.some(c => c !== ""));
+
+                const { headers, dataStart } = scanGrid(matrix);
+                pMatrix = matrix.slice(dataStart);
+
+                let defaultClient = headers.length > 11 ? 11 : headers.findIndex(h => h.includes('اسم العميل') || h.includes('العميل') || h.toLowerCase().includes('customer'));
+                let defaultParcel = headers.length > 5 ? 5 : headers.findIndex(h => h.includes('قيمه البوليصه') || h.includes('قيمة البوليصة') || h.includes('البوليصة') || h.includes('قيمه الفاتورة'));
+
+                if (defaultClient === -1) defaultClient = 0;
+                if (defaultParcel === -1) defaultParcel = 0;
+
+                pCols.client = defaultClient;
+                pCols.parcel = defaultParcel;
+
+                populateColOptions('selParcelClientCol', headers, pCols.client);
+                populateColOptions('selParcelAmountCol', headers, pCols.parcel);
+                document.getElementById('boxParcelsMapping').classList.remove('hidden');
+
+                playChime(720);
+                recalcParcels(file.name);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function populateColOptions(elemId, headers, selIdx) {
+            const sel = document.getElementById(elemId);
+            sel.innerHTML = '';
+            headers.forEach((h, i) => {
+                const opt = document.createElement('option');
+                opt.value = i;
+                const letter = getColLetter(i);
+                opt.innerText = `[${letter}] ${h || 'عمود ' + letter}`;
+                if (i === selIdx) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
+
+        function recalcParcels(fname) {
+            pCols.client = parseInt(document.getElementById('selParcelClientCol').value);
+            pCols.parcel = parseInt(document.getElementById('selParcelAmountCol').value);
+
+            groupedParcels = {};
+            let sumP = 0, rowCount = 0;
+
+            pMatrix.forEach(r => {
+                let name = (r[pCols.client] || "").toString().trim();
+                let val = parseNum(r[pCols.parcel]);
+                if (!name || name.includes("الاجمالى") || name.includes("الإجمالي")) return;
+
+                let key = cleanName(name);
+                if (!groupedParcels[key]) {
+                    groupedParcels[key] = { name: name, count: 0, totalParcel: 0 };
+                }
+                groupedParcels[key].count++;
+                groupedParcels[key].totalParcel += val;
+                sumP += val;
+                rowCount++;
+            });
+
+            document.getElementById('txtParcelsStatus').innerText = `تم اعتماد الملف: ${fname || 'بوالص الشحن'}`;
+            document.getElementById('badgeParcelsFile').innerText = "تم الاعتماد";
+            document.getElementById('badgeParcelsFile').className = "text-[10px] font-black px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-600 font-mono shadow-sm";
+            document.getElementById('txtParcelsStats').innerText = `${rowCount} بوليصة | ${Object.keys(groupedParcels).length} عميل | ${sumP.toLocaleString()} ج.م`;
+
+            checkEngineReady();
+            lucide.createIcons();
+        }
+
+        function handleAccountsUpload(e) {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const data = new Uint8Array(evt.target.result);
+                const wb = XLSX.read(data, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+
+                let matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+                matrix = matrix.filter(r => r.some(c => c !== ""));
+
+                const { headers, dataStart } = scanGrid(matrix);
+                aMatrix = matrix.slice(dataStart);
+
+                let balIdx = headers.findIndex(h => h.includes('صافي الرصيد') || h.includes('صافى الرصيد'));
+                if (balIdx === -1) balIdx = headers.findIndex(h => h.includes('رصيد نهائي') || h.includes('رصيد نهائى') || h.includes('الرصيد'));
+                if (balIdx === -1) balIdx = 0;
+
+                aCols.name = headers.findIndex(h => h.includes('اسم الحساب') || h.includes('الحساب') || h.includes('اسم العميل') || h.toLowerCase().includes('account'));
+                aCols.accNo = headers.findIndex(h => h.includes('رقم الحساب') || h.includes('كود') || h.toLowerCase().includes('code') || h.toLowerCase().includes('id'));
+                aCols.balance = balIdx;
+
+                populateColOptions('selAccNameCol', headers, aCols.name);
+                populateColOptions('selAccNoCol', headers, aCols.accNo);
+                populateColOptions('selAccBalanceCol', headers, aCols.balance);
+                document.getElementById('boxAccountsMapping').classList.remove('hidden');
+
+                playChime(760);
+                recalcAccounts(file.name);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function recalcAccounts(fname) {
+            aCols.name = parseInt(document.getElementById('selAccNameCol').value);
+            aCols.accNo = parseInt(document.getElementById('selAccNoCol').value);
+            aCols.balance = parseInt(document.getElementById('selAccBalanceCol').value);
+
+            ledgerAccounts = {};
+            let sumB = 0, rowCount = 0;
+
+            aMatrix.forEach(r => {
+                let name = (r[aCols.name] || "").toString().trim();
+                let accNo = (r[aCols.accNo] || "").toString().trim();
+                let bal = parseNum(r[aCols.balance]);
+                if (!name || name.includes("الاجمالى") || name.includes("الإجمالي")) return;
+
+                let key = cleanName(name);
+                ledgerAccounts[key] = {
+                    name: name,
+                    accNo: accNo || "غير مسجل",
+                    netBalance: bal
+                };
+                sumB += bal;
+                rowCount++;
+            });
+
+            document.getElementById('txtAccountsStatus').innerText = `تم اعتماد الكشف: ${fname || 'كشف الأرصدة'}`;
+            document.getElementById('badgeAccountsFile').innerText = "تم الاعتماد";
+            document.getElementById('badgeAccountsFile').className = "text-[10px] font-black px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-600 font-mono shadow-sm";
+            document.getElementById('txtAccountsStats').innerText = `${rowCount} حساب | صافي الرصيد: ${sumB.toLocaleString()} ج.م`;
+
+            checkEngineReady();
+            lucide.createIcons();
+        }
+
+        function checkEngineReady() {
+            if (Object.keys(groupedParcels).length > 0 && Object.keys(ledgerAccounts).length > 0) {
+                document.getElementById('btnExecuteReconEngine').disabled = false;
+            }
+        }
+
+        function executeFullReconciliation() {
+            playChime(880, 'triangle', 0.2);
+            auditList = [];
+            let allKeys = new Set([...Object.keys(groupedParcels), ...Object.keys(ledgerAccounts)]);
+
+            allKeys.forEach(k => {
+                let p = groupedParcels[k];
+                let a = ledgerAccounts[k];
+
+                let displayName = a ? a.name : (p ? p.name : k);
+                let accNo = a ? a.accNo : "غير مسجل";
+                let parcelCount = p ? p.count : 0;
+                let totalParcel = p ? p.totalParcel : 0;
+                let netBalance = a ? a.netBalance : 0;
+
+                let category = "unlinked";
+                let finalStandingBadge = "";
+                let finalStandingTitle = "";
+                let finalStandingVerdict = "";
+                let detailedExplanation = "";
+                let calculatedVariance = 0;
+
+                if (a) {
+                    if (netBalance < -0.001) {
+                        calculatedVariance = netBalance;
+                        category = "payable";
+                        finalStandingTitle = "دائن بالسالب (له رصيد)";
+                        finalStandingBadge = "bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 font-black shadow-sm";
+                        finalStandingVerdict = `💳 دائن وله رصيد: [${Math.abs(netBalance).toLocaleString(undefined, {minimumFractionDigits:2})} ج.م]`;
+                        detailedExplanation = `صافي رصيده الدفتري دائن بالسالب (${netBalance.toLocaleString()} ج.م) له رصيد فائض / دفعة مسبقة مستحقة لصالحه.`;
+                    } else if (netBalance > 0.001) {
+                        if (p) {
+                            calculatedVariance = netBalance - totalParcel;
+                            if (Math.abs(calculatedVariance) < 0.01) {
+                                category = "zero";
+                                finalStandingTitle = "مطابق وخالص (0.00)";
+                                finalStandingBadge = "bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-black shadow-sm";
+                                finalStandingVerdict = "✅ خالص السداد تماماً (0.00 ج.م)";
+                                detailedExplanation = "تطابقت بوالص الشحن المسجلة مع رصيد العميل بالمليم وتم إقفال الحساب ولا توجد أي مبالغ معلقة.";
+                            } else if (calculatedVariance > 0.01) {
+                                category = "receivable";
+                                finalStandingTitle = "مدين (عليه فلوس)";
+                                finalStandingBadge = "bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 font-bold shadow-sm";
+                                finalStandingVerdict = `⚠️ مدين ومطلوب منه: [${calculatedVariance.toLocaleString(undefined, {minimumFractionDigits:2})} ج.م]`;
+                                detailedExplanation = `صافي رصيده الدفتري (${netBalance.toLocaleString()} ج.م) أكبر من إجمالي البوالص (${totalParcel.toLocaleString()} ج.م)، ومطلوب تحصيل الفارق.`;
+                            } else {
+                                category = "payable";
+                                finalStandingTitle = "دائن بالسالب (له رصيد)";
+                                finalStandingBadge = "bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 font-black shadow-sm";
+                                finalStandingVerdict = `💳 دائن وله رصيد: [${Math.abs(calculatedVariance).toLocaleString(undefined, {minimumFractionDigits:2})} ج.م]`;
+                                detailedExplanation = `قيمة بوالص الشحن الصادرة تزيد عن الرصيد المطلوب بفارق دائن قدره ${Math.abs(calculatedVariance).toLocaleString()} ج.م.`;
+                            }
+                        } else {
+                            calculatedVariance = netBalance;
+                            category = "receivable";
+                            finalStandingTitle = "مدين مستحق (بدون بوالص)";
+                            finalStandingBadge = "bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 font-bold shadow-sm";
+                            finalStandingVerdict = `⚠️ مطلوب منه دفترياً: [${netBalance.toLocaleString(undefined, {minimumFractionDigits:2})} ج.م]`;
+                            detailedExplanation = `رصيد مدين مستحق دفترياً بالكشف ولم تصدر له بوالص في هذا الملف.`;
+                        }
+                    } else {
+                        calculatedVariance = 0;
+                        category = "zero";
+                        finalStandingTitle = "مطابق وخالص (0.00)";
+                        finalStandingBadge = "bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-black shadow-sm";
+                        finalStandingVerdict = "✅ خالص السداد تماماً (0.00 ج.م)";
+                        detailedExplanation = "الحساب خالص السداد بنسبة 100% ولا توجد أي مستحقات متبقية.";
+                    }
+                } else {
+                    calculatedVariance = -totalParcel;
+                    category = "unlinked";
+                    finalStandingTitle = "بوالص بلا حساب";
+                    finalStandingBadge = "bg-purple-500/15 border border-purple-500/30 text-purple-800 dark:text-purple-300 font-bold shadow-sm";
+                    finalStandingVerdict = `❓ بوالص غير مقترنة بحساب [${totalParcel.toLocaleString()} ج.م]`;
+                    detailedExplanation = "توجد شحنات بوالص صادرة للعميل ولكن حسابه غير مدرج في كشف الأرصدة المرفوع.";
+                }
+
+                auditList.push({
+                    displayName,
+                    accNo,
+                    parcelCount,
+                    totalParcel,
+                    netBalance,
+                    variance: calculatedVariance,
+                    category,
+                    finalStandingTitle,
+                    finalStandingBadge,
+                    finalStandingVerdict,
+                    detailedExplanation
+                });
+            });
+
+            auditList.sort((a, b) => {
+                if (a.category === 'payable' && b.category !== 'payable') return -1;
+                if (b.category === 'payable' && a.category !== 'payable') return 1;
+                return Math.abs(b.variance) - Math.abs(a.variance);
+            });
+
+            renderAuditKpis();
+            renderAuditVisuals();
+            renderAuditTable();
+
+            document.getElementById('boxAuditResults').style.display = 'block';
+            document.getElementById('btnExportReconExcel').style.display = 'inline-flex';
+            document.getElementById('btnPrintReport').style.display = 'inline-flex';
+            document.getElementById('boxAuditResults').scrollIntoView({ behavior: 'smooth' });
+
+            let zeroCount = auditList.filter(r => r.category === 'zero').length;
+            if (zeroCount > 0 && (zeroCount / auditList.length) > 0.3) {
+                confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+            }
+
+            lucide.createIcons();
+        }
+
+        function renderAuditKpis() {
+            let total = auditList.length;
+            let zero = auditList.filter(r => r.category === 'zero').length;
+            let rec = auditList.filter(r => r.category === 'receivable').length;
+            let pay = auditList.filter(r => r.category === 'payable').length;
+            let unl = auditList.filter(r => r.category === 'unlinked').length;
+
+            let sumParcels = auditList.reduce((s, r) => s + r.totalParcel, 0);
+            let sumBalances = auditList.reduce((s, r) => s + r.netBalance, 0);
+            let netVariance = sumBalances - sumParcels;
+
+            document.getElementById('txtCount_all').innerText = total;
+            document.getElementById('txtCount_zero').innerText = zero;
+            document.getElementById('txtCount_receivable').innerText = rec;
+            document.getElementById('txtCount_payable').innerText = pay;
+            document.getElementById('txtCount_unlinked').innerText = unl;
+
+            const grid = document.getElementById('gridAuditKpis');
+            grid.innerHTML = `
+                <div class="glass-panel p-4 flex flex-col justify-between">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">إجمالي العملاء المشتركين</span>
+                    <div class="text-base font-black text-slate-900 dark:text-white font-mono mt-1">${total.toLocaleString()}</div>
+                    <span class="text-[10px] text-slate-400 font-bold mt-1">حسابات وبوالص</span>
+                </div>
+                <div class="glass-panel p-4 bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-500/40 flex flex-col justify-between">
+                    <span class="text-xs text-emerald-800 dark:text-emerald-400 font-black">✅ مطابق وخالص [0.00]</span>
+                    <div class="text-base font-black text-emerald-700 dark:text-emerald-300 font-mono mt-1">${zero} عميل</div>
+                    <span class="text-[10px] text-emerald-600 dark:text-emerald-500 font-bold mt-1">${total > 0 ? (zero/total*100).toFixed(1) : 0}% نسبة الخلوص والسداد</span>
+                </div>
+                <div class="glass-panel p-4 bg-amber-50/80 dark:bg-amber-950/30 border-amber-300 dark:border-amber-500/40 flex flex-col justify-between">
+                    <span class="text-xs text-amber-800 dark:text-amber-400 font-black">⚠️ عليه فلوس (مدين)</span>
+                    <div class="text-base font-black text-amber-700 dark:text-amber-300 font-mono mt-1">${rec} عميل</div>
+                    <span class="text-[10px] text-amber-600 dark:text-amber-500 font-bold mt-1">مطالبات قيد المتابعة</span>
+                </div>
+                <div class="glass-panel p-4 bg-rose-50/80 dark:bg-rose-950/30 border-rose-300 dark:border-rose-500/40 flex flex-col justify-between">
+                    <span class="text-xs text-rose-800 dark:text-rose-400 font-black">💳 له فلوس (دائن بالسالب)</span>
+                    <div class="text-base font-black text-rose-700 dark:text-rose-300 font-mono mt-1">${pay} عميل</div>
+                    <span class="text-[10px] text-rose-600 dark:text-rose-500 font-bold mt-1">أرصدة بالسالب / دفع زيادة</span>
+                </div>
+                <div class="glass-panel p-4 flex flex-col justify-between">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">إجمالي صافي الأرصدة</span>
+                    <div class="text-base font-black text-slate-900 dark:text-white font-mono mt-1">${sumBalances.toLocaleString(undefined, {minimumFractionDigits:2})} ج.م</div>
+                    <span class="text-[10px] text-slate-400 font-bold mt-1">دفاترياً من الكشف</span>
+                </div>
+                <div class="glass-panel p-4 flex flex-col justify-between">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">صافي الفارق الإجمالي</span>
+                    <div class="text-base font-black ${netVariance >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'} font-mono mt-1">${netVariance.toLocaleString(undefined, {minimumFractionDigits:2})} ج.م</div>
+                    <span class="text-[10px] text-slate-400 font-bold mt-1">فارق الرصيد والبوالص</span>
+                </div>
+            `;
+        }
+
+        function renderAuditVisuals() {
+            let zero = auditList.filter(r => r.category === 'zero').length;
+            let rec = auditList.filter(r => r.category === 'receivable').length;
+            let pay = auditList.filter(r => r.category === 'payable').length;
+            let unl = auditList.filter(r => r.category === 'unlinked').length;
+
+            let sumParcels = auditList.reduce((s, r) => s + r.totalParcel, 0);
+            let sumBalances = auditList.reduce((s, r) => s + r.netBalance, 0);
+
+            if (chartAuditDoughnutInst) chartAuditDoughnutInst.destroy();
+            if (chartAuditBarsInst) chartAuditBarsInst.destroy();
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const tickColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? '#1e293b' : '#f1f5f9';
+
+            const ctx1 = document.getElementById('chartAuditDoughnut').getContext('2d');
+            chartAuditDoughnutInst = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['مطابق وخالص', 'مدين (عليه)', 'دائن (له)', 'بوالص بلا حساب'],
+                    datasets: [{
+                        data: [zero, rec, pay, unl],
+                        backgroundColor: ['#10b981', '#f59e0b', '#f43f5e', '#a855f7'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: tickColor, font: { family: 'Cairo', size: 10 } } } }
+                }
+            });
+
+            const ctx2 = document.getElementById('chartAuditBars').getContext('2d');
+            chartAuditBarsInst = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['إجمالي صافي الرصيد الدفتري', 'إجمالي بوالص الشحن'],
+                    datasets: [{
+                        label: 'القيمة (ج.م)',
+                        data: [sumBalances, sumParcels],
+                        backgroundColor: ['#10b981', '#3b82f6'],
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
+                        x: { grid: { display: false }, ticks: { color: tickColor, font: { family: 'Cairo' } } }
+                    }
+                }
+            });
+        }
+
+        function changeAuditFilter(cat) {
+            playChime(480);
+            curFilter = cat;
+            document.querySelectorAll('.recon-tab-btn').forEach(b => {
+                b.className = "recon-tab-btn px-4 py-2 rounded-2xl text-xs font-bold transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+            });
+            document.getElementById(`tabFilter_${cat}`).className = "recon-tab-btn px-4 py-2 rounded-2xl text-xs font-black transition bg-blue-600 text-white shadow-md shadow-blue-600/30";
+            renderAuditTable();
+        }
+
+        function renderAuditTable() {
+            let term = document.getElementById('inputAuditSearch').value.toLowerCase().trim();
+            let tbody = document.getElementById('auditTableBody');
+
+            let filtered = auditList.filter(r => {
+                let matchCat = (curFilter === 'all' || r.category === curFilter);
+                let matchSearch = r.displayName.toLowerCase().includes(term) || r.accNo.toString().toLowerCase().includes(term);
+                return matchCat && matchSearch;
+            });
+
+            document.getElementById('txtRecordsCounter').innerText = `عدد السجلات المعروضة: ${filtered.length}`;
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-400 font-bold text-xs">لا توجد سجلات تطابق الفلتر أو البحث الحالي.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((r, i) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-blue-50/40 dark:hover:bg-slate-800/60 transition duration-150">
+                        <td class="p-3 text-center text-slate-400 font-mono">${i + 1}</td>
+                        <td class="p-3 font-bold text-slate-900 dark:text-slate-100">${r.displayName}</td>
+                        <td class="p-3 text-center font-mono text-slate-600 dark:text-slate-400">${r.accNo}</td>
+                        <td class="p-3 text-center font-bold text-slate-700 dark:text-slate-300 font-mono">${r.parcelCount}</td>
+                        <td class="p-3 text-left font-mono">${formatMoneyHTML(r.totalParcel)}</td>
+                        <td class="p-3 text-left font-mono">${formatMoneyHTML(r.netBalance)}</td>
+                        <td class="p-3 text-left font-mono">${formatMoneyHTML(r.variance)}</td>
+                        <td class="p-3 text-center">
+                            <span class="px-3 py-1.5 rounded-xl text-xs block text-center ${r.finalStandingBadge}">
+                                ${r.finalStandingVerdict}
+                            </span>
+                        </td>
+                        <td class="p-3 text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">${r.detailedExplanation}</td>
+                        <td class="p-3 text-center no-print">
+                            <button onclick="inspectRow(${i})" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white transition shadow-sm" title="عرض السند">
+                                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function inspectRow(idx) {
+            let r = auditList[idx];
+            if (!r) return;
+            let auditor = document.getElementById('auditorNameInput')?.value || "أ/محمود خليفه";
+            
+            let modalContent = `
+                <div class="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span class="text-slate-500">اسم العميل:</span>
+                        <span class="text-slate-900 dark:text-white font-black text-sm">${r.displayName}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-500">كود / رقم الحساب:</span>
+                        <span class="font-mono font-bold">${r.accNo}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-500">عدد البوالص المصدرة:</span>
+                        <span class="font-mono font-bold">${r.parcelCount} بوليصة</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5 text-center">
+                    <div class="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                        <span class="text-[10px] text-blue-600 font-bold block">إجمالي البوالص</span>
+                        <span class="font-mono font-black text-sm text-blue-700 dark:text-blue-300">${r.totalParcel.toLocaleString(undefined, {minimumFractionDigits:2})} ج.م</span>
+                    </div>
+                    <div class="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                        <span class="text-[10px] text-emerald-600 font-bold block">صافي الرصيد الدفتري</span>
+                        <span class="font-mono font-black text-sm text-emerald-700 dark:text-emerald-300">${r.netBalance.toLocaleString(undefined, {minimumFractionDigits:2})} ج.م</span>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-slate-100 dark:bg-slate-800/80 rounded-2xl space-y-1">
+                    <div class="flex justify-between text-xs font-bold">
+                        <span>انحراف التسوية والمطابقة:</span>
+                        <span class="font-mono font-black ${r.variance >= 0 ? 'text-amber-600' : 'text-rose-600'}">${r.variance.toLocaleString(undefined, {minimumFractionDigits:2})} ج.م</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-700">
+                        ${r.detailedExplanation}
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-[10px] text-slate-400 pt-1">
+                    <span>المسؤول المعتمد: <strong class="text-slate-700 dark:text-slate-300">${auditor}</strong></span>
+                    <span>تاريخ التدقيق: ${new Date().toLocaleDateString('ar-EG')}</span>
+                </div>
+            `;
+
+            document.getElementById('modalVoucherContent').innerHTML = modalContent;
+            document.getElementById('modalVoucher').classList.remove('hidden');
+            lucide.createIcons();
+            playChime(620);
+        }
+
+        function closeModal() {
+            document.getElementById('modalVoucher').classList.add('hidden');
+        }
+
+        function downloadReconciliationWorkbook() {
+            if (auditList.length === 0) return;
+
+            let auditor = document.getElementById('auditorNameInput')?.value || "أ/محمود خليفه";
+
+            let exportRows = auditList.map((r, i) => ({
+                "م": i + 1,
+                "اسم الحساب / العميل الدفتري": r.displayName,
+                "رقم الحساب": r.accNo,
+                "عدد بوالص الشحن": r.parcelCount,
+                "إجمالي البوالص (ج.م)": r.totalParcel,
+                "صافي الرصيد الدفتري (ج.م)": r.netBalance,
+                "انحراف التسوية (الرصيد - البوالص)": r.variance,
+                "الوضع الأخير للعميل": r.finalStandingVerdict,
+                "الموقف المحاسبي والتوجيه": r.detailedExplanation,
+                "المراجع المعتمد": auditor
+            }));
+
+            let ws = XLSX.utils.json_to_sheet(exportRows);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "الوضع_الأخير_للعملاء");
+            XLSX.writeFile(wb, `تقرير_الوضع_الأخير_لحسابات_العملاء_${auditor}.xlsx`);
+            playChime(900);
+        }
+
+        // =========================================================================
+        // SHIPMENT DASHBOARD ENGINE (TAB 2)
+        // =========================================================================
+        let dashWorkbook = null;
+        let dashRawData = [];
+        let dashCols = {};
+        let chartCourierInst = null;
+        let chartStatusInst = null;
+        let curDashFilter = 'all';
+
+        function handleDashFileUpload(e) {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const data = new Uint8Array(evt.target.result);
+                dashWorkbook = XLSX.read(data, { type: 'array', cellDates: true });
+                
+                document.getElementById('badgeDashFilename').innerText = file.name;
+                const sel = document.getElementById('selDashSheet');
+                sel.innerHTML = '';
+                dashWorkbook.SheetNames.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.innerText = name;
+                    sel.appendChild(opt);
+                });
+
+                loadDashSheet(dashWorkbook.SheetNames[0]);
+                document.getElementById('boxDashUpload').style.display = 'none';
+                document.getElementById('boxDashContent').style.display = 'block';
+                lucide.createIcons();
+                playChime(640);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function switchDashSheet() {
+            loadDashSheet(document.getElementById('selDashSheet').value);
+        }
+
+        function loadDashSheet(sheetName) {
+            const ws = dashWorkbook.Sheets[sheetName];
+            let json = XLSX.utils.sheet_to_json(ws, { defval: "" });
+            if (json.length > 0) {
+                let last = json[json.length - 1];
+                if (Object.values(last).join(" ").includes("الاجمالى")) {
+                    json = json.slice(0, json.length - 1);
+                }
+            }
+            dashRawData = json;
+            detectDashCols(json);
+            renderDashUI();
+        }
+
+        function detectDashCols(rows) {
+            if (!rows.length) return;
+            let keys = Object.keys(rows[0]);
+            dashCols = {
+                id: keys.find(k => k.trim() === 'م' || k.includes('مسلسل') || k.toLowerCase().includes('id')),
+                date: keys.find(k => k.includes('تاريخ الشحن') || k.trim() === 'التاريخ' || k.toLowerCase().includes('date')),
+                client: keys.find(k => k.includes('اسم العميل') || k.includes('العميل') || k.toLowerCase().includes('customer')),
+                phone: keys.find(k => k.includes('تليفون') || k.includes('موبايل') || k.toLowerCase().includes('phone')),
+                courier: keys.find(k => k.includes('شركه الشحن') || k.includes('شركة الشحن') || k.toLowerCase().includes('courier')),
+                tracking: keys.find(k => k.includes('رقم البوليصه') || k.includes('رقم البوليصة') || k.toLowerCase().includes('tracking')),
+                invoice: keys.find(k => k.includes('قيمه الفاتورة') || k.includes('قيمة الفاتورة') || k.includes('الفاتورة')),
+                parcel: keys.find(k => k.includes('قيمه البوليصه') || k.includes('قيمة البوليصة') || k.includes('البوليصة')),
+                diff: keys.find(k => k.includes('فرق البوليصه') || k.includes('فرق البوليصة')),
+                status: keys.find(k => k.includes('حاله الشحن') || k.includes('حالة الشحن') || k.includes('الحالة')),
+                agent: keys.find(k => k.includes('المندوب') || k.includes('مسؤول') || k.toLowerCase().includes('agent')),
+                notes: keys.find(k => k.includes('ملاحظات') || k.toLowerCase().includes('notes'))
+            };
+        }
+
+        function parseDashDate(val) {
+            if (!val) return null;
+            if (val instanceof Date) return val;
+            let s = val.toString().trim().replace(/-/g, '/');
+            let parts = s.split('/');
+            if (parts.length === 3) {
+                let y = parseInt(parts[0]);
+                let m = parseInt(parts[1]) - 1;
+                let d = parseInt(parts[2]);
+                if (y < 100) y += 2000;
+                return new Date(y, m, d);
+            }
+            let p = new Date(val);
+            return isNaN(p.getTime()) ? null : p;
+        }
+
+        function renderDashUI() {
+            let total = dashRawData.length;
+            let deliv = 0, trans = 0;
+            let sumInv = 0, sumParc = 0, sumDiff = 0;
+            let priorCount = 0;
+            let courierMap = {}, repMap = {};
+            let alerts = [];
+            const today = new Date();
+
+            dashRawData.forEach((r, idx) => {
+                let inv = parseNum(r[dashCols.invoice]);
+                let parc = parseNum(r[dashCols.parcel]) || inv;
+                let diff = (dashCols.diff && r[dashCols.diff]) ? parseNum(r[dashCols.diff]) : (inv - parc);
+
+                sumInv += inv;
+                sumParc += parc;
+                sumDiff += diff;
+
+                let st = (r[dashCols.status] || "جارى التسليم").toString().trim();
+                let isDeliv = st.includes("تم التسليم") || st.includes("مسلّمة");
+                if (isDeliv) deliv++; else trans++;
+
+                let c = (r[dashCols.courier] || "أخرى").toString().trim();
+                if (!courierMap[c]) courierMap[c] = { count: 0, deliv: 0, trans: 0, inv: 0 };
+                courierMap[c].count++;
+                if (isDeliv) courierMap[c].deliv++; else courierMap[c].trans++;
+                courierMap[c].inv += inv;
+
+                let rep = (r[dashCols.agent] || "غير محدد").toString().trim();
+                if (!repMap[rep]) repMap[rep] = { count: 0, deliv: 0, trans: 0, inv: 0 };
+                repMap[rep].count++;
+                if (isDeliv) repMap[rep].deliv++; else repMap[rep].trans++;
+                repMap[rep].inv += inv;
+
+                let sDate = parseDashDate(r[dashCols.date]);
+                if (sDate) {
+                    let isPrior = (sDate < new Date(2026, 8, 1));
+                    if (isPrior) priorCount++;
+                    let days = Math.floor((today - sDate) / (1000 * 60 * 60 * 24));
+                    if (isPrior) {
+                        alerts.push({
+                            id: r[dashCols.id] || (idx + 1),
+                            stTxt: isDeliv ? "مسلّمة من فترة سابقة" : "🚨 معلقة متأخرة",
+                            date: r[dashCols.date] || "",
+                            days: days,
+                            courier: c,
+                            tracking: r[dashCols.tracking] || "",
+                            client: r[dashCols.client] || "",
+                            phone: r[dashCols.phone] || "",
+                            inv: inv,
+                            agent: rep,
+                            act: isDeliv ? "مراجعة المطابقة والأرشفة" : `متابعة مع ${c} لتحديث الموقف`
+                        });
+                    }
+                }
+            });
+
+            // Dash KPIs
+            const kpis = [
+                { title: "إجمالي البوالص", val: total.toLocaleString(), sub: "سجل العمليات", icon: "package", col: "text-slate-900 dark:text-white", border: "" },
+                { title: "تم التسليم", val: deliv.toLocaleString(), sub: (total > 0 ? (deliv/total*100).toFixed(1) + "%" : "0%"), icon: "check-circle-2", col: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30" },
+                { title: "قيد التوصيل", val: trans.toLocaleString(), sub: (total > 0 ? (trans/total*100).toFixed(1) + "%" : "0%"), icon: "truck", col: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30" },
+                { title: "إجمالي الفواتير", val: sumInv.toLocaleString(undefined, {maximumFractionDigits:0}) + " ج.م", sub: "قيمة المبيعات", icon: "receipt", col: "text-slate-900 dark:text-white", border: "" },
+                { title: "إجمالي البوالص", val: sumParc.toLocaleString(undefined, {maximumFractionDigits:0}) + " ج.م", sub: "مبالغ التحصيل", icon: "file-text", col: "text-slate-700 dark:text-slate-200", border: "" },
+                { title: "فرق الإجماليين", val: sumDiff.toLocaleString(undefined, {maximumFractionDigits:0}) + " ج.م", sub: (sumInv > 0 ? (sumDiff/sumInv*100).toFixed(1) + "% فرق" : "0%"), icon: "arrow-left-right", col: "text-rose-600 dark:text-rose-400", border: "border-rose-500/30" },
+                { title: "شحنات شهر 8 وما قبله", val: priorCount.toLocaleString(), sub: "متأخرات حرجة", icon: "alert-triangle", col: "text-rose-600 dark:text-rose-400", border: "border-rose-500/30" },
+            ];
+
+            const kpiBox = document.getElementById('gridDashKpis');
+            kpiBox.innerHTML = '';
+            kpis.forEach(k => {
+                kpiBox.innerHTML += `
+                    <div class="glass-panel p-3.5 flex flex-col justify-between ${k.border}">
+                        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mb-1">
+                            <span>${k.title}</span>
+                            <span class="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 ${k.col}"><i data-lucide="${k.icon}" class="w-3.5 h-3.5"></i></span>
+                        </div>
+                        <div>
+                            <div class="text-sm md:text-base font-black ${k.col} font-mono">${k.val}</div>
+                            <div class="text-[10px] font-bold text-slate-400 mt-0.5">${k.sub}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Financial Recon Table
+            let dInv = 0, dParc = 0, tInv = 0, tParc = 0;
+            dashRawData.forEach(r => {
+                let st = (r[dashCols.status] || "جارى التسليم").toString().trim();
+                let isD = st.includes("تم التسليم") || st.includes("مسلّمة");
+                let inv = parseNum(r[dashCols.invoice]);
+                let parc = parseNum(r[dashCols.parcel]) || inv;
+                if (isD) { dInv += inv; dParc += parc; } else { tInv += inv; tParc += parc; }
+            });
+
+            document.getElementById('bodyDashRecon').innerHTML = `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td class="p-2.5 font-bold text-emerald-700 dark:text-emerald-400">✅ شحنات مسلّمة (مكتملة)</td>
+                    <td class="p-2.5 text-center font-mono">${deliv}</td>
+                    <td class="p-2.5 text-center text-slate-500">${(total > 0 ? (deliv/total*100).toFixed(1) : 0)}%</td>
+                    <td class="p-2.5 text-left font-mono font-bold text-slate-800 dark:text-slate-200">${dInv.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center text-slate-500">${(sumInv > 0 ? (dInv/sumInv*100).toFixed(1) : 0)}%</td>
+                    <td class="p-2.5 text-left font-mono font-bold text-slate-800 dark:text-slate-200">${dParc.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center text-slate-500">${(sumParc > 0 ? (dParc/sumParc*100).toFixed(1) : 0)}%</td>
+                    <td class="p-2.5 text-left font-mono font-bold text-emerald-700 dark:text-emerald-400">+${(dInv - dParc).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center text-slate-500">${(dInv > 0 ? ((dInv - dParc)/dInv*100).toFixed(1) : 0)}%</td>
+                    <td class="p-2.5 text-slate-500 dark:text-slate-400">مبالغ محصلة وموردة</td>
+                </tr>
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td class="p-2.5 font-bold text-blue-700 dark:text-blue-400">🚚 شحنات جارية (نشطة في التوزيع)</td>
+                    <td class="p-2.5 text-center font-mono">${trans}</td>
+                    <td class="p-2.5 text-center text-slate-500">${(total > 0 ? (trans/total*100).toFixed(1) : 0)}%</td>
+                    <td class="p-2.5 text-left font-mono font-bold text-slate-800 dark:text-slate-200">${tInv.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center text-slate-500">${(sumInv > 0 ? (tInv/sumInv*100).toFixed(1) : 0)}%</td>
+                    <td class="p-2.5 text-left font-mono font-bold text-slate-800 dark:text-slate-200">${tParc.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center text-slate-500">${(sumParc > 0 ? (tParc/sumParc*100).toFixed(1) : 0)}%</td>
+                    <td class="p-2.5 text-left font-mono font-bold text-blue-700 dark:text-blue-400">+${(tInv - tParc).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center text-slate-500">${(tInv > 0 ? ((tInv - tParc)/tInv*100).toFixed(1) : 0)}%</td>
+                    <td class="p-2.5 text-slate-500 dark:text-slate-400">مبالغ قيد التحصيل لدى شركات الشحن</td>
+                </tr>
+                <tr class="bg-slate-100 dark:bg-slate-950 font-black text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-700">
+                    <td class="p-2.5 text-right">الإجمالـــــــــي العــــــــام</td>
+                    <td class="p-2.5 text-center font-mono">${total}</td>
+                    <td class="p-2.5 text-center">100%</td>
+                    <td class="p-2.5 text-left font-mono">${sumInv.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center">100%</td>
+                    <td class="p-2.5 text-left font-mono">${sumParc.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center">100%</td>
+                    <td class="p-2.5 text-left font-mono text-rose-600 dark:text-rose-400">+${sumDiff.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="p-2.5 text-center text-rose-600 dark:text-rose-400">${(sumInv > 0 ? (sumDiff/sumInv*100).toFixed(2) : 0)}%</td>
+                    <td class="p-2.5 text-emerald-700 dark:text-emerald-400">مطابقة تامة 100% بين الفواتير والبوالص</td>
+                </tr>
+            `;
+
+            // Couriers Table
+            let cBox = document.getElementById('bodyDashCouriers');
+            cBox.innerHTML = '';
+            let cLabels = Object.keys(courierMap);
+            let cInvVals = [];
+            cLabels.forEach(c => {
+                let o = courierMap[c];
+                cInvVals.push(o.inv);
+                let r = (o.count > 0 ? (o.deliv / o.count * 100).toFixed(1) : 0);
+                cBox.innerHTML += `
+                    <tr>
+                        <td class="p-2 font-bold text-slate-800 dark:text-slate-200">${c}</td>
+                        <td class="p-2 text-center font-mono">${o.count}</td>
+                        <td class="p-2 text-center font-mono text-emerald-600 dark:text-emerald-400 font-bold">${o.deliv}</td>
+                        <td class="p-2 text-center font-mono text-blue-600 dark:text-blue-400 font-bold">${o.trans}</td>
+                        <td class="p-2 text-center">
+                            <div class="flex items-center gap-1.5 justify-center">
+                                <div class="w-12 bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: ${r}%"></div>
+                                </div>
+                                <span class="font-bold text-slate-700 dark:text-slate-300 text-[10px]">${r}%</span>
+                            </div>
+                        </td>
+                        <td class="p-2 text-left font-mono font-bold text-slate-800 dark:text-slate-200">${o.inv.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    </tr>
+                `;
+            });
+
+            // Reps Table
+            let rBox = document.getElementById('bodyDashReps');
+            rBox.innerHTML = '';
+            Object.keys(repMap).forEach(rep => {
+                let o = repMap[rep];
+                let r = (o.count > 0 ? (o.deliv / o.count * 100).toFixed(1) : 0);
+                rBox.innerHTML += `
+                    <tr>
+                        <td class="p-2 font-bold text-slate-800 dark:text-slate-200">${rep}</td>
+                        <td class="p-2 text-center font-mono">${o.count}</td>
+                        <td class="p-2 text-center font-mono text-emerald-600 dark:text-emerald-400 font-bold">${o.deliv}</td>
+                        <td class="p-2 text-center font-mono text-blue-600 dark:text-blue-400 font-bold">${o.trans}</td>
+                        <td class="p-2 text-center">
+                            <div class="flex items-center gap-1.5 justify-center">
+                                <div class="w-12 bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                    <div class="bg-blue-500 h-1.5 rounded-full" style="width: ${r}%"></div>
+                                </div>
+                                <span class="font-bold text-slate-700 dark:text-slate-300 text-[10px]">${r}%</span>
+                            </div>
+                        </td>
+                        <td class="p-2 text-left font-mono font-bold text-slate-800 dark:text-slate-200">${o.inv.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    </tr>
+                `;
+            });
+
+            // Alerts Table
+            document.getElementById('badgeDashAlertCount').innerText = `${alerts.length} حركة`;
+            let aBox = document.getElementById('bodyDashAlerts');
+            aBox.innerHTML = '';
+            if (!alerts.length) {
+                aBox.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-slate-400 font-bold">كافة الشحنات منتظمة ولا توجد متأخرات حرجة!</td></tr>`;
+            } else {
+                alerts.forEach((a, i) => {
+                    aBox.innerHTML += `
+                        <tr class="hover:bg-rose-50 dark:hover:bg-rose-950/20">
+                            <td class="p-2 text-center font-mono text-slate-500">${i + 1}</td>
+                            <td class="p-2 font-bold text-rose-600 dark:text-rose-400">${a.stTxt}</td>
+                            <td class="p-2 text-center font-mono">${a.date}</td>
+                            <td class="p-2 text-center font-mono font-bold text-rose-600">${a.days} يوم</td>
+                            <td class="p-2 text-center font-bold">${a.courier}</td>
+                            <td class="p-2 text-center font-mono">${a.tracking}</td>
+                            <td class="p-2 font-bold">${a.client}</td>
+                            <td class="p-2 text-center font-mono">${a.phone}</td>
+                            <td class="p-2 text-left font-mono font-bold">${a.inv.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                            <td class="p-2 text-slate-500 dark:text-slate-400">${a.agent}</td>
+                            <td class="p-2 text-xs text-rose-700 dark:text-rose-300 font-bold">${a.act}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            document.getElementById('txtMasterTotal').innerText = total;
+            renderDashMasterTable(dashRawData);
+            renderDashCharts(cLabels, cInvVals, deliv, trans);
+            lucide.createIcons();
+        }
+
+        function filterMasterByStatus(filterKey) {
+            curDashFilter = filterKey;
+            document.querySelectorAll('.chip-filter').forEach(btn => {
+                btn.className = "chip-filter px-3 py-1 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800";
+            });
+            const activeBtn = document.getElementById(`chip_${filterKey}`);
+            if (activeBtn) {
+                activeBtn.className = "chip-filter px-3 py-1 rounded-xl text-[11px] font-black bg-blue-600 text-white shadow-sm";
+            }
+            filterDashMasterTable();
+        }
+
+        function renderDashMasterTable(data) {
+            let thead = document.getElementById('theadDashMaster');
+            let tbody = document.getElementById('tbodyDashMaster');
+
+            thead.innerHTML = `
+                <tr>
+                    <th class="p-2 text-center">م</th>
+                    <th class="p-2 text-center">التاريخ</th>
+                    <th class="p-2">اسم العميل</th>
+                    <th class="p-2 text-center font-mono">الهاتف</th>
+                    <th class="p-2 text-center">شركة الشحن</th>
+                    <th class="p-2 text-center font-mono">رقم البوليصة</th>
+                    <th class="p-2 text-left font-mono">قيمة الفاتورة</th>
+                    <th class="p-2 text-left font-mono">قيمة البوليصة</th>
+                    <th class="p-2 text-left font-mono">الفرق</th>
+                    <th class="p-2 text-center">حالة الشحن</th>
+                    <th class="p-2">المندوب</th>
+                    <th class="p-2">ملاحظات</th>
+                </tr>
+            `;
+
+            tbody.innerHTML = '';
+            data.forEach((r, idx) => {
+                let inv = parseNum(r[dashCols.invoice]);
+                let parc = parseNum(r[dashCols.parcel]) || inv;
+                let diff = (dashCols.diff && r[dashCols.diff]) ? parseNum(r[dashCols.diff]) : (inv - parc);
+                let st = (r[dashCols.status] || "جارى التسليم").toString().trim();
+                let isD = st.includes("تم التسليم") || st.includes("مسلّمة");
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                        <td class="p-2 text-center font-mono text-slate-400">${r[dashCols.id] || (idx + 1)}</td>
+                        <td class="p-2 text-center font-mono text-slate-500">${r[dashCols.date] || ""}</td>
+                        <td class="p-2 font-bold text-slate-800 dark:text-slate-100">${r[dashCols.client] || ""}</td>
+                        <td class="p-2 text-center font-mono text-slate-500">${r[dashCols.phone] || ""}</td>
+                        <td class="p-2 text-center font-semibold text-slate-600 dark:text-slate-300">${r[dashCols.courier] || ""}</td>
+                        <td class="p-2 text-center font-mono font-bold text-slate-700 dark:text-slate-200">${r[dashCols.tracking] || ""}</td>
+                        <td class="p-2 text-left font-mono font-bold text-slate-900 dark:text-slate-100">${inv.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                        <td class="p-2 text-left font-mono text-slate-700 dark:text-slate-300">${parc.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                        <td class="p-2 text-left font-mono font-bold ${diff > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}">${diff > 0 ? diff.toLocaleString(undefined, {minimumFractionDigits:2}) : '-'}</td>
+                        <td class="p-2 text-center">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold ${isD ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' : 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30'}">${st}</span>
+                        </td>
+                        <td class="p-2 text-slate-600 dark:text-slate-300">${r[dashCols.agent] || ""}</td>
+                        <td class="p-2 text-slate-400 text-[11px]">${r[dashCols.notes] || ""}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filterDashMasterTable() {
+            let term = document.getElementById('inputDashSearch').value.toLowerCase().trim();
+
+            let filtered = dashRawData.filter(r => {
+                let c = (r[dashCols.client] || "").toString().toLowerCase();
+                let p = (r[dashCols.phone] || "").toString().toLowerCase();
+                let t = (r[dashCols.tracking] || "").toString().toLowerCase();
+                let a = (r[dashCols.agent] || "").toString().toLowerCase();
+                let matchesSearch = c.includes(term) || p.includes(term) || t.includes(term) || a.includes(term);
+
+                let st = (r[dashCols.status] || "جارى التسليم").toString().trim();
+                let isD = st.includes("تم التسليم") || st.includes("مسلّمة");
+                let sDate = parseDashDate(r[dashCols.date]);
+                let isDelayed = sDate && (sDate < new Date(2026, 8, 1)) && !isD;
+
+                let matchesFilter = true;
+                if (curDashFilter === 'delivered') matchesFilter = isD;
+                else if (curDashFilter === 'transit') matchesFilter = !isD;
+                else if (curDashFilter === 'delayed') matchesFilter = isDelayed;
+
+                return matchesSearch && matchesFilter;
+            });
+
+            renderDashMasterTable(filtered);
+        }
+
+        function renderDashCharts(cLabels, cInvVals, dCount, tCount) {
+            if (chartCourierInst) chartCourierInst.destroy();
+            if (chartStatusInst) chartStatusInst.destroy();
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? '#1e293b' : '#f1f5f9';
+            const tickColor = isDark ? '#94a3b8' : '#64748b';
+
+            const ctx1 = document.getElementById('chartDashCouriers').getContext('2d');
+            chartCourierInst = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: cLabels,
+                    datasets: [{
+                        label: 'إجمالي الفواتير (ج.م)',
+                        data: cInvVals,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
+                        x: { grid: { display: false }, ticks: { color: tickColor } }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('chartDashStatus').getContext('2d');
+            chartStatusInst = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['تم التسليم', 'قيد التوصيل'],
+                    datasets: [{
+                        data: [dCount, tCount],
+                        backgroundColor: ['#10b981', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: tickColor } } }
+                }
+            });
+        }
+
+        function exportDashExcel() {
+            if (!dashRawData || dashRawData.length === 0) return;
+            
+            const wb = XLSX.utils.book_new();
+            const today = new Date();
+            let auditor = document.getElementById('auditorNameInput')?.value || "أ/محمود خليفه";
+
+            const masterRows = dashRawData.map((r, idx) => {
+                let inv = parseNum(r[dashCols.invoice]);
+                let parc = parseNum(r[dashCols.parcel]) || inv;
+                let diff = (dashCols.diff && r[dashCols.diff]) ? parseNum(r[dashCols.diff]) : (inv - parc);
+                let sDate = parseDashDate(r[dashCols.date]);
+                let days = sDate ? Math.floor((today - sDate) / (1000 * 60 * 60 * 24)) : 0;
+                let st = (r[dashCols.status] || "جارى التسليم").toString().trim();
+                let isD = st.includes("تم التسليم") || st.includes("مسلّمة");
+                let timeStat = sDate && sDate < new Date(2026, 8, 1) 
+                    ? (isD ? "مسلّمة (فترة سابقة)" : "🚨 معلقة من فترة سابقة") 
+                    : (isD ? "✅ تم التسليم بنجاح" : "🟢 نشطة - جاري التوصيل");
+
+                return {
+                    "م": r[dashCols.id] || (idx + 1),
+                    "تاريخ الشحن": r[dashCols.date] || "",
+                    "اسم العميل": r[dashCols.client] || "",
+                    "تليفون العميل": r[dashCols.phone] || "",
+                    "شركة الشحن": r[dashCols.courier] || "",
+                    "رقم البوليصة": r[dashCols.tracking] || "",
+                    "قيمة الفاتورة (ج.م)": inv,
+                    "قيمة البوليصة (ج.م)": parc,
+                    "فرق البوليصة والفاتورة (ج.م)": diff,
+                    "حالة الشحن": st,
+                    "مدة الشحن (أيام)": days,
+                    "مؤشر المتابعة والتواريخ": timeStat,
+                    "المندوب المسؤول": r[dashCols.agent] || "",
+                    "ملاحظات وقناة البيع": r[dashCols.notes] || "",
+                    "المشرف": auditor
+                };
+            });
+
+            const totInv = masterRows.reduce((s, r) => s + r["قيمة الفاتورة (ج.م)"], 0);
+            const totParc = masterRows.reduce((s, r) => s + r["قيمة البوليصة (ج.م)"], 0);
+            const totDiff = masterRows.reduce((s, r) => s + r["فرق البوليصة والفاتورة (ج.م)"], 0);
+
+            masterRows.push({
+                "م": "الإجمالي العام",
+                "تاريخ الشحن": "",
+                "اسم العميل": "",
+                "تليفون العميل": "",
+                "شركة الشحن": "",
+                "رقم البوليصة": `عدد البوالص: ${dashRawData.length}`,
+                "قيمة الفاتورة (ج.م)": totInv,
+                "قيمة البوليصة (ج.م)": totParc,
+                "فرق البوليصة والفاتورة (ج.م)": totDiff,
+                "حالة الشحن": "",
+                "مدة الشحن (أيام)": "",
+                "مؤشر المتابعة والتواريخ": "",
+                "المندوب المسؤول": "",
+                "ملاحظات وقناة البيع": "",
+                "المشرف": auditor
+            });
+
+            const wsMaster = XLSX.utils.json_to_sheet(masterRows);
+            XLSX.utils.book_append_sheet(wb, wsMaster, "سجل_متابعة_البوالص");
+
+            let delivCount = 0, transCount = 0, dInv = 0, dParc = 0, tInv = 0, tParc = 0;
+            let courierMap = {}, repMap = {};
+
+            dashRawData.forEach(r => {
+                let inv = parseNum(r[dashCols.invoice]);
+                let parc = parseNum(r[dashCols.parcel]) || inv;
+                let st = (r[dashCols.status] || "جارى التسليم").toString().trim();
+                let isD = st.includes("تم التسليم") || st.includes("مسلّمة");
+                let c = (r[dashCols.courier] || "أخرى").toString().trim();
+                let rep = (r[dashCols.agent] || "غير محدد").toString().trim();
+
+                if (isD) { delivCount++; dInv += inv; dParc += parc; }
+                else { transCount++; tInv += inv; tParc += parc; }
+
+                if (!courierMap[c]) courierMap[c] = { count: 0, deliv: 0, trans: 0, inv: 0 };
+                courierMap[c].count++;
+                if (isD) courierMap[c].deliv++; else courierMap[c].trans++;
+                courierMap[c].inv += inv;
+
+                if (!repMap[rep]) repMap[rep] = { count: 0, deliv: 0, trans: 0, inv: 0 };
+                repMap[rep].count++;
+                if (isD) repMap[rep].deliv++; else repMap[rep].trans++;
+                repMap[rep].inv += inv;
+            });
+
+            const summaryRows = [
+                { "بيان المؤشر التنفيذي": "المسؤول / المشرف المعتمد", "القيمة / العدد": auditor, "ملاحظات": "" },
+                { "بيان المؤشر التنفيذي": "إجمالي عدد البوالص", "القيمة / العدد": dashRawData.length, "ملاحظات": "إجمالي حركات الشحن" },
+                { "بيان المؤشر التنفيذي": "شحنات تم التسليم", "القيمة / العدد": delivCount, "ملاحظات": `${(delivCount / dashRawData.length * 100).toFixed(1)}% من الإجمالي` },
+                { "بيان المؤشر التنفيذي": "شحنات جاري التوصيل (نشطة)", "القيمة / العدد": transCount, "ملاحظات": `${(transCount / dashRawData.length * 100).toFixed(1)}% من الإجمالي` },
+                { "بيان المؤشر التنفيذي": "إجمالي قيمة الفواتير (ج.م)", "القيمة / العدد": totInv, "ملاحظات": "إجمالي القيمة البيعية" },
+                { "بيان المؤشر التنفيذي": "إجمالي قيمة البوالص (ج.م)", "القيمة / العدد": totParc, "ملاحظات": "إجمالي مبالغ التحصيل COD" },
+                { "بيان المؤشر التنفيذي": "فرق الإجماليين / فروق الاستبدال (ج.م)", "القيمة / العدد": totDiff, "ملاحظات": `${(totDiff / totInv * 100).toFixed(2)}% نسبة الفرق` }
+            ];
+
+            const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+            XLSX.utils.book_append_sheet(wb, wsSummary, "لوحة_التحكم_والمطابقة");
+
+            XLSX.writeFile(wb, `تقرير_متابعة_بوالص_الشحن_${auditor}.xlsx`);
+            playChime(950);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAuditorName();
+            initThreeScene();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
